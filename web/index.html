@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReconKit · recon console</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d0f'/%3E%3Cpath d='M16 6l8 10-8 10-8-10z' fill='none' stroke='%23d4f24e' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">◈</span>
+    <span class="brand-name">RECONKIT</span>
+    <span class="brand-sub">authorised testing only</span>
+  </div>
+  <div class="topbar-mid">
+    <div class="engine-meter" id="engineMeter">
+      <span class="meter-dot" data-s="checking"></span>
+      <span id="engineText">checking engines…</span>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" id="scopeBtn" type="button">Scope <span class="count" id="scopeCount">0</span></button>
+    <button class="btn btn-ghost" id="setupBtn" type="button">Setup</button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="sidebar" aria-label="Tools">
+    <div class="side-search">
+      <input id="toolSearch" type="search" placeholder="Filter tools" autocomplete="off" spellcheck="false" aria-label="Filter tools">
+      <kbd>/</kbd>
+    </div>
+    <nav class="tool-list" id="toolList"></nav>
+    <div class="side-foot" id="sideFoot">—</div>
+  </aside>
+
+  <section class="workspace">
+    <div class="tool-head">
+      <div class="tool-head-main">
+        <div class="eyebrow" id="toolGroup">—</div>
+        <h1 id="toolName">Pick a tool</h1>
+        <p class="blurb" id="toolBlurb">Select an engine on the left to configure and run it.</p>
+      </div>
+      <div class="tool-badges" id="toolBadges"></div>
+    </div>
+
+    <form class="runform" id="runForm" novalidate>
+      <div class="field target-field">
+        <label for="target">Target</label>
+        <input id="target" name="target" type="text" autocomplete="off" spellcheck="false" placeholder="example.com">
+      </div>
+      <button class="btn btn-primary" id="runBtn" type="submit">Run scan</button>
+      <button class="btn btn-danger" id="stopBtn" type="button" hidden>Stop</button>
+    </form>
+
+    <div class="options" id="options"></div>
+
+    <div class="preview" id="preview" hidden>
+      <span class="preview-label">cmd</span>
+      <code id="previewText"></code>
+      <button class="icon-btn" id="copyPreview" type="button" title="Copy the command">copy</button>
+    </div>
+
+    <section class="console" aria-label="Scan output">
+      <div class="console-bar">
+        <div class="console-title">
+          <span class="status-pill" id="statusPill" data-status="idle">idle</span>
+          <span class="console-target" id="consoleTarget"></span>
+        </div>
+        <div class="console-meta">
+          <span id="consoleTimer"></span>
+          <span id="consoleExit"></span>
+          <button class="icon-btn" id="clearConsole" type="button" title="Clear the view">clear</button>
+        </div>
+      </div>
+      <pre class="term" id="term" tabindex="0"><span class="term-empty">No output yet. Pick a tool, enter a target, and run it.</span></pre>
+      <div class="console-foot">
+        <span id="lineCount">0 lines</span>
+        <label class="switch"><input type="checkbox" id="autoscroll" checked> autoscroll</label>
+      </div>
+    </section>
+  </section>
+
+  <aside class="rail" aria-label="Results">
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" data-tab="report" type="button" role="tab" aria-selected="true">Report</button>
+      <button class="tab" data-tab="runs" type="button" role="tab" aria-selected="false">Runs</button>
+      <button class="tab" data-tab="shots" type="button" role="tab" aria-selected="false">Shots</button>
+    </div>
+
+    <div class="rail-panel is-active" id="panel-report">
+      <div class="scan-meta" id="scanMeta"></div>
+      <div class="analyze-row">
+        <button class="btn btn-primary btn-sm" id="analyzeBtn" type="button" disabled>Analyse</button>
+        <a class="btn btn-ghost btn-sm is-disabled" id="exportBtn" href="#" aria-disabled="true">Export .md</a>
+      </div>
+      <div class="ai-note" id="aiNote">—</div>
+      <div class="handoff" id="handoff" hidden>
+        <div class="handoff-head">
+          <span>Hand off in-scope targets</span>
+          <span class="handoff-count" id="handoffCount"></span>
+        </div>
+        <div class="handoff-row">
+          <select id="handoffTool" aria-label="Next tool"></select>
+          <button class="btn btn-primary btn-sm" id="handoffBtn" type="button">Run</button>
+        </div>
+        <p class="handoff-note" id="handoffNote"></p>
+      </div>
+      <div class="analysis" id="analysis"><p class="muted">Run a scan, then analyse it. With no AI key set, a local rule-based summary is used.</p></div>
+    </div>
+
+    <div class="rail-panel" id="panel-runs">
+      <div class="panel-head">
+        <span>Recent runs</span>
+        <button class="icon-btn" id="refreshRuns" type="button">refresh</button>
+      </div>
+      <div class="runs" id="runsList"></div>
+    </div>
+
+    <div class="rail-panel" id="panel-shots">
+      <div class="panel-head">
+        <span>Screenshots</span>
+        <button class="icon-btn" id="refreshShots" type="button">refresh</button>
+      </div>
+      <div class="shots" id="shotsGrid"></div>
+    </div>
+  </aside>
+</main>
+
+<footer class="statusbar">
+  <span>127.0.0.1 · local only</span>
+  <span id="statusbarHint">Ctrl+Enter runs · / filters tools</span>
+  <span>v1.1</span>
+</footer>
+
+<dialog class="modal" id="scopeDialog">
+  <div class="modal-head">
+    <h2>Scope &amp; authorisation</h2>
+    <button class="icon-btn" type="button" data-close>close</button>
+  </div>
+  <p class="muted">Active tools only run against hosts listed here. Add a root domain to authorise it and its subdomains.</p>
+  <div class="scope-add">
+    <input id="scopeInput" type="text" placeholder="example.com or 10.0.0.5" autocomplete="off" spellcheck="false">
+    <button class="btn btn-ghost" id="scopeAdd" type="button">Add</button>
+  </div>
+  <ul class="scope-list" id="scopeList"></ul>
+  <p class="fine">Only scan systems you own or have written permission to test. The list is stored locally in <code>data/reconkit.db</code>.</p>
+</dialog>
+
+<dialog class="modal modal-wide" id="setupDialog">
+  <div class="modal-head">
+    <h2>Engines</h2>
+    <button class="icon-btn" type="button" data-close>close</button>
+  </div>
+  <p class="muted">ReconKit orchestrates tools installed on this machine. Missing ones show the install command; paths can be overridden in <code>.env</code>.</p>
+  <div class="setup-list" id="setupList"></div>
+</dialog>
+
+<dialog class="modal modal-narrow" id="authDialog">
+  <div class="modal-head">
+    <h2>Authorise target</h2>
+    <button class="icon-btn" type="button" data-close>close</button>
+  </div>
+  <p><code id="authHost">—</code> is not in scope.</p>
+  <label class="check">
+    <input type="checkbox" id="authCheck">
+    I own this target or have written permission to test it.
+  </label>
+  <div class="modal-actions">
+    <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+    <button class="btn btn-primary" id="authConfirm" type="button" disabled>Add to scope &amp; run</button>
+  </div>
+  <p class="fine">Active scanning without authorisation is illegal in most jurisdictions. This gate exists so you can show your process in reports.</p>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
